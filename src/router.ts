@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory, RouteLocation, RouteLocationMatched } from "vue-router";
+import { createRouter, createWebHashHistory, RouteLocation, RouteLocationMatched, RouteRecordRaw } from "vue-router";
 
 import App from "@/components/App.vue";
 import Auth from "@/components/Auth.vue";
@@ -30,43 +30,43 @@ function extractVFSPath(route: RouteLocation) {
 	return { path };
 }
 
-const routes = [
+const routes: RouteRecordRaw[] = [
 	{
-		path: "/welcome",
-		component: InitialSetup,
-		meta: { requiresInitialSetupIncomplete: true },
+	  path: "/welcome",
+	  component: InitialSetup,
+	  meta: { requiresInitialSetupIncomplete: true },
 	},
 	{
-		path: "/auth",
-		component: Auth,
-		meta: { requiresAnonymous: true, requiresInitialSetupComplete: true },
+	  path: "/auth",
+	  component: Auth,
+	  meta: { requiresAnonymous: true, requiresInitialSetupComplete: true },
 	},
 	{
-		path: "",
-		component: App,
-		meta: { requiresAuth: true, requiresInitialSetupComplete: true },
-		children: [
-			{ path: "/browse/:pathMatch(.*)*", component: Browser, props: extractVFSPath },
-			{ path: "/random", component: Random },
-			{ path: "/recent", component: Recent },
-			{ path: "/playlists", component: Playlists },
-			{ path: "/playlist/:name", component: Playlist, props: true },
-			{ path: "/search/:query?", component: Search, props: true },
-			{
-				path: "/settings",
-				component: Settings,
-				children: [
-					{ path: "collection", component: SettingsCollection },
-					{ path: "ddns", component: SettingsDDNS },
-					{ path: "users", component: SettingsUsers },
-					{ path: ":pathMatch(.*)*", component: SettingsPreferences },
-				],
-			},
-			{ path: ":pathMatch(.*)", component: NotFound },
-		],
+	  path: "",
+	  component: App,
+	  meta: { requiresAuth: true, requiresInitialSetupComplete: true },
+	  children: [
+		{ path: "/browse/:pathMatch(.*)*", component: Browser, props: extractVFSPath },
+		{ path: "/random", component: Random },
+		{ path: "/recent", component: Recent },
+		{ path: "/playlists", component: Playlists },
+		{ path: "/playlist/:name", component: Playlist, props: true },
+		{ path: "/search/:query?", component: Search, props: true },
+		{
+		  path: "/settings",
+		  component: Settings,
+		  children: [
+			{ path: "collection", component: SettingsCollection },
+			{ path: "ddns", component: SettingsDDNS },
+			{ path: "users", component: SettingsUsers },
+			{ path: ":pathMatch(.*)*", component: SettingsPreferences },
+		  ],
+		},
+		{ path: ":pathMatch(.*)", component: NotFound },
+	  ],
 	},
-];
-
+  ];
+  
 const router = createRouter({
 	history: createWebHashHistory(),
 	routes,
