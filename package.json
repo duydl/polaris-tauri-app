@@ -8,11 +8,14 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "build-and-run": "cargo tauri build && src-tauri\\target\\release\\my-tauri-app.exe"
+    "build-and-run": "cargo tauri build && src-tauri\\target\\release\\polaris-tauri.exe"
   },
   "dependencies": {
     "vue": "^3.3.4",
-    "@tauri-apps/api": "^1"
+    "@tauri-apps/api": "^1",
+    "pinia": "^2.0.14",
+    "vue-router": "^4.0.14",
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",
