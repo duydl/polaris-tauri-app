@@ -65,7 +65,7 @@ function queueAll() {
 function onItemClicked(item: CollectionItem) {
 	const variant = item.variant;
 	if (variant == "Directory") {
-		router.push("/browse/" + item.path).catch(err => {});
+		router.push("/browse/" + item.path).catch(_err => {});
 	} else if (variant == "Song") {
 		playlist.queueTracks([{...item}]);
 	}

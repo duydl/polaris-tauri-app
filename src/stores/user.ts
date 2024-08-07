@@ -22,7 +22,7 @@ export const useUserStore = defineStore("user", () => {
 	watch(
 		() => isLoggedIn.value,
 		() => {
-			router.push("/").catch(err => {});
+			router.push("/").catch(_err => {});
 		}
 	);
 

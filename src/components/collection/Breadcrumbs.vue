@@ -59,7 +59,7 @@ const components = computed((): Component[] =>{
 });
 
 function onClick(component: Component) {
-	router.push("/browse/" + component.path).catch(err => {});
+	router.push("/browse/" + component.path).catch(_err => {});
 }
 </script>
 

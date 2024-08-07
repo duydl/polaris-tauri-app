@@ -13,7 +13,7 @@ const router = useRouter();
 const query = ref("");
 
 function runSearch() {
-	router.push("/search/" + encodeURIComponent(query.value)).catch(err => {});
+	router.push("/search/" + encodeURIComponent(query.value)).catch(_err => {});
 }
 </script>
 

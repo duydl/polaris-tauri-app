@@ -48,7 +48,7 @@ function updateCurrentTab() {
 }
 
 function onClickTab(tab: TabDefinition) {
-	router.push("/settings/" + tab.path).catch(err => {});
+	router.push("/settings/" + tab.path).catch(_err => {});
 }
 </script>
 

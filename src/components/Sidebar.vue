@@ -78,7 +78,7 @@ watch(() => route.path,
 );
 
 function onClickButton(button: SidebarButton) {
-	router.push(button.url).catch(err => {});
+	router.push(button.url).catch(_err => {});
 }
 </script>
 
