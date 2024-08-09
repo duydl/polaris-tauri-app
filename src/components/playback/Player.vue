@@ -63,6 +63,8 @@ import { formatDuration, formatTitle } from "@/format";
 import CoverArt from "@/components/CoverArt.vue";
 import Spinner from "@/components/Spinner.vue";
 
+import { invoke } from '@tauri-apps/api/tauri';
+
 const playlist = usePlaylistStore();
 const preferences = usePreferencesStore();
 
@@ -81,7 +83,34 @@ const seekInput: Ref<HTMLElement | null> = ref(null);
 const volumeInput: Ref<HTMLElement | null> = ref(null);
 
 const currentTrack = computed(() => playlist.currentTrack);
-const trackURL = computed(() => currentTrack.value ? makeAudioURL(currentTrack.value.path) : null);
+
+const trackURL = ref(null);
+
+async function fetchAndSetTrackURL(track) {
+  if (!track) {
+    trackURL.value = null;
+    return;
+  }
+
+  try {
+    // Fetch the audio bytes from the backend
+    const audioBytes = await invoke<Uint8Array>('fetch_audio_file', { 
+      path:  makeAudioURL(currentTrack.value.path)
+    });
+
+    // Create a Blob URL from the audio bytes
+    const blob = new Blob([new Uint8Array(audioBytes)], { type: 'audio/mp3' });
+    trackURL.value = URL.createObjectURL(blob);
+  } catch (error) {
+    console.error("Error fetching audio:", error);
+    trackURL.value = null;
+  }
+}
+
+// Watch for changes in the current track and fetch the audio
+watch(currentTrack, fetchAndSetTrackURL);
+
+
 const artworkURL = computed(() => currentTrack.value && currentTrack.value.artwork ? makeThumbnailURL(currentTrack.value.artwork) : null);
 
 const trackProgress = computed(() => {

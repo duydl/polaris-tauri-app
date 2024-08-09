@@ -8,6 +8,25 @@ use tauri::command;
 
 use serde_json::json;
 
+#[command]
+async fn fetch_audio_file(path: String) -> Result<Vec<u8>, String> {
+    let client = Client::new();
+    let url = format!("http://localhost:5050/api{}", path);
+    println!("URL Audio: {}",url);
+    match client.get(&url).send().await {
+        Ok(response) => {
+            if response.status().is_success() {
+                match response.bytes().await {
+                    Ok(bytes) => Ok(bytes.to_vec()),
+                    Err(err) => Err(format!("Error reading bytes: {}", err)),
+                }
+            } else {
+                Err(format!("Failed to fetch audio file, status: {}", response.status()))
+            }
+        }
+        Err(err) => Err(format!("Request error: {}", err)),
+    }
+}
 
 #[command]
 async fn proxy_api_request(path: String, options: serde_json::Value) -> Result<String, String> {
@@ -60,7 +79,7 @@ fn main() {
         }
         Ok(())
       })
-      .invoke_handler(tauri::generate_handler![proxy_api_request])
+      .invoke_handler(tauri::generate_handler![proxy_api_request, fetch_audio_file])
       .run(tauri::generate_context!())
       .expect("error while running tauri application");
  }
