@@ -2,7 +2,7 @@
 	<div class="player">
 		<audio ref="htmlAudio" controls v-if="trackURL" v-bind:src="trackURL" @timeupdate="onTimeUpdate"
 			@error="onPlaybackError" @ended="onEnded" @pause="onPaused" @playing="onPlaying"
-			@waiting="onWaiting"></audio>
+			@waiting="onWaiting" @canplay="onCanPlay"></audio>
 
 		<div v-if="currentTrack" class="controls noselect">
 			<div class="playback">
@@ -86,11 +86,23 @@ const currentTrack = computed(() => playlist.currentTrack);
 
 const trackURL = ref(null);
 
+function onCanPlay() {
+  if (htmlAudio.value) {
+    htmlAudio.value.play();
+  }
+}
+
 async function fetchAndSetTrackURL(track) {
   if (!track) {
     trackURL.value = null;
     return;
   }
+
+  if (htmlAudio.value) {
+      htmlAudio.value.pause();
+      htmlAudio.value.src = "";
+      htmlAudio.value.load();
+    }
 
   try {
     // Fetch the audio bytes from the backend
@@ -101,6 +113,12 @@ async function fetchAndSetTrackURL(track) {
     // Create a Blob URL from the audio bytes
     const blob = new Blob([new Uint8Array(audioBytes)], { type: 'audio/mp3' });
     trackURL.value = URL.createObjectURL(blob);
+
+	// Play the new track automatically
+    if (htmlAudio.value) {
+      htmlAudio.value.load();
+    }
+
   } catch (error) {
     console.error("Error fetching audio:", error);
     trackURL.value = null;
