@@ -3,6 +3,7 @@
 		<div class="content">
 			<img class="logo" src="@/assets/logo.svg" />
 			<form name="authForm" @submit.prevent="doLogin">
+				<input data-cy="server" type="text" v-model="server" placeholder="http://..." autofocus />
 				<input data-cy="username" type="text" v-model="username" placeholder="Username" autofocus />
 				<input data-cy="password" type="password" v-model="password" placeholder="Password" />
 				<p v-if="badCredentials" data-cy="login-error" class="tip error">Incorrect credentials, please try
@@ -17,8 +18,11 @@
 import { ref } from "vue";
 import { useUserStore } from "@/stores/user";
 
+import { invoke } from '@tauri-apps/api/tauri';
+
 const user = useUserStore();
 
+const server = ref("");  // Added server ref
 const username = ref("");
 const password = ref("");
 const badCredentials = ref(false);
@@ -26,6 +30,10 @@ const badCredentials = ref(false);
 async function doLogin(event: Event) {
 	badCredentials.value = false;
 	try {
+		// Set the server URL in the Tauri backend
+		await invoke('set_server_url', { url: server.value });
+
+		// Proceed with login or other operations using the stored server URL
 		await user.login(username.value, password.value);
 	} catch (e) {
 		if (e instanceof Response) {

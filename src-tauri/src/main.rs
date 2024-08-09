@@ -2,16 +2,39 @@
 use tauri::Manager;
 use tauri::http::{Response, Request};
 use reqwest::Client;
-use std::sync::Arc;
+use std::sync::Mutex;
 
 use tauri::command;
 
 use serde_json::json;
 
+use tauri::State;
+
+struct AppState{
+    server_url: Mutex<String>,
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            server_url: Mutex::new(String::from("http://localhost:5050")),
+        }
+    }
+}
+
 #[command]
-async fn fetch_audio_file(path: String) -> Result<Vec<u8>, String> {
+fn set_server_url(url: String, state: State<'_, AppState>) -> Result<(), String> {
+    *state.server_url.lock().unwrap() = url;
+    Ok(())
+}
+
+#[command]
+async fn fetch_audio_file(path: String, state: State<'_, AppState>) -> Result<Vec<u8>, String> {
     let client = Client::new();
-    let url = format!("http://localhost:5050/api{}", path);
+    let url = {
+        let server_url = state.server_url.lock().unwrap();
+        format!("{}/api{}", *server_url, path)
+    };
     println!("URL Audio: {}",url);
     match client.get(&url).send().await {
         Ok(response) => {
@@ -29,9 +52,12 @@ async fn fetch_audio_file(path: String) -> Result<Vec<u8>, String> {
 }
 
 #[command]
-async fn proxy_api_request(path: String, options: serde_json::Value) -> Result<String, String> {
+async fn proxy_api_request(path: String, options: serde_json::Value, state: State<'_, AppState>) -> Result<String, String> {
     let client = Client::new();
-    let url = format!("http://localhost:5050/api{}", path);
+    let url = {
+        let server_url = state.server_url.lock().unwrap();
+        format!("{}/api{}", *server_url, path)
+    };
     println!("URL: {}",url);
     let mut request_builder = client.request(
         options["method"].as_str().unwrap_or("GET").parse().unwrap(),
@@ -79,7 +105,8 @@ fn main() {
         }
         Ok(())
       })
-      .invoke_handler(tauri::generate_handler![proxy_api_request, fetch_audio_file])
+      .manage(AppState::default())
+      .invoke_handler(tauri::generate_handler![proxy_api_request, fetch_audio_file, set_server_url])
       .run(tauri::generate_context!())
       .expect("error while running tauri application");
  }
