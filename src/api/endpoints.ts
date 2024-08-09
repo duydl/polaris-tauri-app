@@ -20,6 +20,8 @@ import {
 } from "@/api/dto";
 import { useUserStore } from "@/stores/user";
 
+import { invoke } from '@tauri-apps/api/tauri';
+
 function decodeCollectionItem(data: CollectionItemRaw): CollectionItem {
 	if (data.Song) {
 		data.Song.variant = "Song";
@@ -41,34 +43,63 @@ function decodeSong(data: Song): Song {
 	data.variant = "Song";
 	return data;
 }
-
-async function request(endpoint: string, options?: RequestInit): Promise<Response> {
+interface ApiResponse {
+	status: number;
+	body: string;
+  }
+  
+  async function request(endpoint: string, options?: RequestInit): Promise<any> { 
 	const user = useUserStore();
-
+  
 	if (!options) {
-		options = {};
+	  options = {};
 	}
-
+  
 	options.headers = new Headers(options.headers);
 	if (user.isLoggedIn) {
-		options.headers.set("Authorization", "Bearer " + getAuthToken());
+	  options.headers.set("Authorization", "Bearer " + getAuthToken());
 	}
-
-	const response = await fetch("api" + endpoint, options);
-	if (response.status == 401) {
+  
+	// Invoke the Tauri backend command
+	const responseString = await invoke<string>('proxy_api_request', {
+	  path: endpoint,
+	  options: {
+		method: options.method,
+		headers: Object.fromEntries(options.headers.entries()),
+		body: options.body ? options.body.toString() : null,
+	  },
+	});
+	const responseObject: ApiResponse = JSON.parse(responseString);
+	// Debugging output
+	console.log('Response Status:', responseObject.status);
+	console.log('Response Body:', responseObject.body);
+  
+	if (responseObject.status == 401) {
+	  user.logout();
+	  throw new Error('Unauthorized');
+	}
+  
+	if (responseObject.status == 401) {
 		user.logout();
-		throw response;
+		throw new Error('Unauthorized');
+	  }
+	
+	  // Create and return a Response-like object
+	  return new Response(responseObject.body, {
+		status: responseObject.status,
+		statusText: responseObject.status === 200 ? 'OK' : 'Error',
+		headers: options.headers,
+	  });
 	}
-
-	return response;
-}
 
 function getAuthToken(): string | null {
 	return useUserStore().authToken;
 }
 
 export function makeAudioURL(path: string) {
-	return "api/audio/" + encodeURIComponent(path) + "?auth_token=" + getAuthToken();
+	console.log("/audio/" + encodeURIComponent(path) + "?auth_token=" + getAuthToken())
+	// return "http://localhost:5050/" + "api/audio/" + encodeURIComponent(path) + "?auth_token=" + getAuthToken();
+	return "/audio/" + encodeURIComponent(path) + "?auth_token=" + getAuthToken();
 }
 
 export function makeThumbnailURL(path: string) {

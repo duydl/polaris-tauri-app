@@ -1,13 +1,54 @@
 
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 use tauri::Manager;
+use tauri::http::{Response, Request};
+use reqwest::Client;
+use std::sync::Arc;
+
+use tauri::command;
+
+use serde_json::json;
+
+
+#[command]
+async fn proxy_api_request(path: String, options: serde_json::Value) -> Result<String, String> {
+    let client = Client::new();
+    let url = format!("http://localhost:5050/api{}", path);
+    println!("URL: {}",url);
+    let mut request_builder = client.request(
+        options["method"].as_str().unwrap_or("GET").parse().unwrap(),
+        &url
+    );
+
+    if let Some(headers) = options["headers"].as_object() {
+        for (key, value) in headers {
+            request_builder = request_builder.header(key, value.as_str().unwrap_or(""));
+        }
+    }
+
+    if let Some(body) = options["body"].as_str() {
+        request_builder = request_builder.body(body.to_string());
+    }
+
+    match request_builder.send().await {
+        Ok(response) => {
+            let status = response.status().as_u16();
+            let text = response.text().await.map_err(|e| e.to_string())?;
+            println!("Response: {} {}", status, text);
+            // Create the ApiResponse structure and convert it to a JSON string
+            let api_response = json!({
+                "status": status,
+                "body": text,
+            });
+
+            Ok(api_response.to_string())
+        }
+        Err(err) => {
+            println!("Request Error: {}", err);
+            Err(err.to_string())
+        },
+    }
+}
+
 fn main() {
     tauri::Builder::default()
       .setup(|app| {
@@ -19,7 +60,7 @@ fn main() {
         }
         Ok(())
       })
-      .invoke_handler(tauri::generate_handler![greet])
+      .invoke_handler(tauri::generate_handler![proxy_api_request])
       .run(tauri::generate_context!())
       .expect("error while running tauri application");
  }
