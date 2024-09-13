@@ -15,7 +15,58 @@ tauri = { version = "1", features = ["shell-open", "devtools"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 reqwest = "0.11"
+# 
+actix-files = { version = "0.6" }
+actix-web = { version = "4" }
+actix-web-httpauth = { version = "0.8" }
+ape = "0.5"
+base64 = "0.21"
+branca = "0.10.1"
+crossbeam-channel = "0.5"
+diesel_migrations = { version = "2.0", features = ["sqlite"] }
+futures-util = { version = "0.3" }
+getopts = "0.2.21"
+http = "0.2.8"
+id3 = "1.7.0"
+lewton = "0.10.2"
+libsqlite3-sys = { version = "0.26", features = [
+	"bundled",
+	"bundled-windows",
+], optional = true }
+log = "0.4.17"
+metaflac = "0.2.5"
+mp3-duration = "0.1.10"
+mp4ameta = "0.11.0"
+num_cpus = "1.14.0"
+opus_headers = "0.1.2"
+pbkdf2 = "0.11"
+percent-encoding = "2.2"
+rand = "0.8"
+rayon = "1.5"
+regex = "1.7.0"
+rustfm-scrobble = "1.1.1"
+# serde = { version = "1.0.147", features = ["derive"] }
+serde_derive = "1.0.147"
+# serde_json = "1.0.87"
+simplelog = "0.12.0"
+time = "=0.2.27"
+thiserror = "1.0.37"
+toml = "0.7"
+ureq = "2.7"
+url = "2.3"
+
+[dependencies.diesel]
+version = "2.0.2"
+default_features = false
+features = ["r2d2", "sqlite"]
+
+[dependencies.image]
+version = "0.24.4"
+default_features = false
+features = ["bmp", "gif", "jpeg", "png"]
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
+default = ["bundle-sqlite"]
+bundle-sqlite = ["libsqlite3-sys"]

@@ -1,3 +1,26 @@
+# Dev
+
+**In main repo:**
+```sh
+cargo tauri dev
+#cargo tauri build > build_logs/build_$(date +"%Y-%m-%d_%H-%M-%S").log 2>&1
+```
+```ps
+$timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+cargo tauri build *> "log\build_$timestamp.log"
+```
+
+**In polaris orignial repo:**
+```sh
+cargo run
+```
+
+or more detail
+```sh
+cargo run -- -w web -s docs/swagger -d test-output/my.db
+```
+
+
 # Tauri + Vue + TypeScript
 
 This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
