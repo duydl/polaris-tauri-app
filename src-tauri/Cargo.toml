@@ -70,3 +70,8 @@ features = ["bmp", "gif", "jpeg", "png"]
 custom-protocol = ["tauri/custom-protocol"]
 default = ["bundle-sqlite"]
 bundle-sqlite = ["libsqlite3-sys"]
+
+[dev-dependencies]
+actix-test = "0.1.0"
+headers = "0.3"
+fs_extra = "1.2.0"

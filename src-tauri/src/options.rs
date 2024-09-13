@@ -29,7 +29,7 @@ impl Manager {
 
 	pub fn parse(&self, input: &[String]) -> Result<CLIOptions, getopts::Fail> {
 		let matches = self.protocol.parse(input)?;
-
+		let default_db_path = PathBuf::from(r"C:\Projects\rust-crates\music-app\polaris-tauri\tauri-vue\src-tauri\test.db");
 		Ok(CLIOptions {
 			show_help: matches.opt_present("h"),
 			#[cfg(unix)]
@@ -40,7 +40,7 @@ impl Manager {
 			#[cfg(unix)]
 			pid_file_path: matches.opt_str("pid").map(PathBuf::from),
 			config_file_path: matches.opt_str("c").map(PathBuf::from),
-			database_file_path: matches.opt_str("d").map(PathBuf::from),
+			database_file_path: matches.opt_str("d").map(PathBuf::from).or(Some(default_db_path)),
 			cache_dir_path: matches.opt_str("cache").map(PathBuf::from),
 			web_dir_path: matches.opt_str("w").map(PathBuf::from),
 			swagger_dir_path: matches.opt_str("s").map(PathBuf::from),
