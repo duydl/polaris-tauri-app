@@ -11,91 +11,91 @@ const DDNS_UPDATE_URL: &str = "https://ydns.io/api/v1/update/";
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-	#[error("DDNS update query failed with HTTP status code `{0}`")]
-	UpdateQueryFailed(u16),
-	#[error("DDNS update query failed due to a transport error")]
-	UpdateQueryTransport,
-	#[error(transparent)]
-	DatabaseConnection(#[from] db::Error),
-	#[error(transparent)]
-	Database(#[from] diesel::result::Error),
+    #[error("DDNS update query failed with HTTP status code `{0}`")]
+    UpdateQueryFailed(u16),
+    #[error("DDNS update query failed due to a transport error")]
+    UpdateQueryTransport,
+    #[error(transparent)]
+    DatabaseConnection(#[from] db::Error),
+    #[error(transparent)]
+    Database(#[from] diesel::result::Error),
 }
 
 #[derive(Clone, Debug, Deserialize, Insertable, PartialEq, Eq, Queryable, Serialize)]
 #[diesel(table_name = ddns_config)]
 pub struct Config {
-	pub host: String,
-	pub username: String,
-	pub password: String,
+    pub host: String,
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Clone)]
 pub struct Manager {
-	db: DB,
+    db: DB,
 }
 
 impl Manager {
-	pub fn new(db: DB) -> Self {
-		Self { db }
-	}
+    pub fn new(db: DB) -> Self {
+        Self { db }
+    }
 
-	fn update_my_ip(&self) -> Result<(), Error> {
-		let config = self.config()?;
-		if config.host.is_empty() || config.username.is_empty() {
-			debug!("Skipping DDNS update because credentials are missing");
-			return Ok(());
-		}
+    fn update_my_ip(&self) -> Result<(), Error> {
+        let config = self.config()?;
+        if config.host.is_empty() || config.username.is_empty() {
+            debug!("Skipping DDNS update because credentials are missing");
+            return Ok(());
+        }
 
-		let full_url = format!("{}?host={}", DDNS_UPDATE_URL, &config.host);
-		let credentials = format!("{}:{}", &config.username, &config.password);
-		let response = ureq::get(full_url.as_str())
-			.set(
-				"Authorization",
-				&format!("Basic {}", BASE64_STANDARD_NO_PAD.encode(credentials)),
-			)
-			.call();
+        let full_url = format!("{}?host={}", DDNS_UPDATE_URL, &config.host);
+        let credentials = format!("{}:{}", &config.username, &config.password);
+        let response = ureq::get(full_url.as_str())
+            .set(
+                "Authorization",
+                &format!("Basic {}", BASE64_STANDARD_NO_PAD.encode(credentials)),
+            )
+            .call();
 
-		match response {
-			Ok(_) => Ok(()),
-			Err(ureq::Error::Status(code, _)) => Err(Error::UpdateQueryFailed(code)),
-			Err(ureq::Error::Transport(_)) => Err(Error::UpdateQueryTransport),
-		}
-	}
+        match response {
+            Ok(_) => Ok(()),
+            Err(ureq::Error::Status(code, _)) => Err(Error::UpdateQueryFailed(code)),
+            Err(ureq::Error::Transport(_)) => Err(Error::UpdateQueryTransport),
+        }
+    }
 
-	pub fn config(&self) -> Result<Config, Error> {
-		use crate::db::ddns_config::dsl::*;
-		let mut connection = self.db.connect()?;
-		Ok(ddns_config
-			.select((host, username, password))
-			.get_result(&mut connection)?)
-	}
+    pub fn config(&self) -> Result<Config, Error> {
+        use crate::db::ddns_config::dsl::*;
+        let mut connection = self.db.connect()?;
+        Ok(ddns_config
+            .select((host, username, password))
+            .get_result(&mut connection)?)
+    }
 
-	pub fn set_config(&self, new_config: &Config) -> Result<(), Error> {
-		use crate::db::ddns_config::dsl::*;
-		let mut connection = self.db.connect()?;
-		diesel::update(ddns_config)
-			.set((
-				host.eq(&new_config.host),
-				username.eq(&new_config.username),
-				password.eq(&new_config.password),
-			))
-			.execute(&mut connection)?;
-		Ok(())
-	}
+    pub fn set_config(&self, new_config: &Config) -> Result<(), Error> {
+        use crate::db::ddns_config::dsl::*;
+        let mut connection = self.db.connect()?;
+        diesel::update(ddns_config)
+            .set((
+                host.eq(&new_config.host),
+                username.eq(&new_config.username),
+                password.eq(&new_config.password),
+            ))
+            .execute(&mut connection)?;
+        Ok(())
+    }
 
-	pub fn begin_periodic_updates(&self) {
-		let cloned = self.clone();
-		std::thread::spawn(move || {
-			cloned.run();
-		});
-	}
+    pub fn begin_periodic_updates(&self) {
+        let cloned = self.clone();
+        std::thread::spawn(move || {
+            cloned.run();
+        });
+    }
 
-	fn run(&self) {
-		loop {
-			if let Err(e) = self.update_my_ip() {
-				error!("Dynamic DNS update error: {:?}", e);
-			}
-			thread::sleep(time::Duration::from_secs(60 * 30));
-		}
-	}
+    fn run(&self) {
+        loop {
+            if let Err(e) = self.update_my_ip() {
+                error!("Dynamic DNS update error: {:?}", e);
+            }
+            thread::sleep(time::Duration::from_secs(60 * 30));
+        }
+    }
 }

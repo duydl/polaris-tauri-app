@@ -30,8 +30,8 @@ http = "0.2.8"
 id3 = "1.7.0"
 lewton = "0.10.2"
 libsqlite3-sys = { version = "0.26", features = [
-	"bundled",
-	"bundled-windows",
+    "bundled",
+    "bundled-windows",
 ], optional = true }
 log = "0.4.17"
 metaflac = "0.2.5"

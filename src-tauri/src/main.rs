@@ -34,49 +34,49 @@ mod utils;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-	#[error(transparent)]
-	App(#[from] app::Error),
-	#[error("Could not parse command line arguments:\n\n{0}")]
-	CliArgsParsing(getopts::Fail),
-	#[error("Could not create log directory `{0}`:\n\n{1}")]
-	LogDirectoryCreationError(PathBuf, std::io::Error),
-	#[error("Could not create log file `{0}`:\n\n{1}")]
-	LogFileCreationError(PathBuf, std::io::Error),
-	#[error("Could not initialize log system:\n\n{0}")]
-	LogInitialization(log::SetLoggerError),
+    #[error(transparent)]
+    App(#[from] app::Error),
+    #[error("Could not parse command line arguments:\n\n{0}")]
+    CliArgsParsing(getopts::Fail),
+    #[error("Could not create log directory `{0}`:\n\n{1}")]
+    LogDirectoryCreationError(PathBuf, std::io::Error),
+    #[error("Could not create log file `{0}`:\n\n{1}")]
+    LogFileCreationError(PathBuf, std::io::Error),
+    #[error("Could not initialize log system:\n\n{0}")]
+    LogInitialization(log::SetLoggerError),
 }
 
 fn init_logging<T: AsRef<Path>>(
-	log_level: LevelFilter,
-	log_file_path: &Option<T>,
+    log_level: LevelFilter,
+    log_file_path: &Option<T>,
 ) -> Result<(), Error> {
-	let log_config = simplelog::ConfigBuilder::new()
-		.set_location_level(LevelFilter::Error)
-		.build();
+    let log_config = simplelog::ConfigBuilder::new()
+        .set_location_level(LevelFilter::Error)
+        .build();
 
-	let mut loggers: Vec<Box<dyn SharedLogger>> = vec![TermLogger::new(
-		log_level,
-		log_config.clone(),
-		TerminalMode::Mixed,
-		ColorChoice::Auto,
-	)];
+    let mut loggers: Vec<Box<dyn SharedLogger>> = vec![TermLogger::new(
+        log_level,
+        log_config.clone(),
+        TerminalMode::Mixed,
+        ColorChoice::Auto,
+    )];
 
-	if let Some(path) = log_file_path {
-		if let Some(parent) = path.as_ref().parent() {
-			fs::create_dir_all(parent)
-				.map_err(|e| Error::LogDirectoryCreationError(parent.to_owned(), e))?;
-		}
-		loggers.push(WriteLogger::new(
-			log_level,
-			log_config,
-			fs::File::create(path)
-				.map_err(|e| Error::LogFileCreationError(path.as_ref().to_owned(), e))?,
-		));
-	}
+    if let Some(path) = log_file_path {
+        if let Some(parent) = path.as_ref().parent() {
+            fs::create_dir_all(parent)
+                .map_err(|e| Error::LogDirectoryCreationError(parent.to_owned(), e))?;
+        }
+        loggers.push(WriteLogger::new(
+            log_level,
+            log_config,
+            fs::File::create(path)
+                .map_err(|e| Error::LogFileCreationError(path.as_ref().to_owned(), e))?,
+        ));
+    }
 
-	CombinedLogger::init(loggers).map_err(Error::LogInitialization)?;
+    CombinedLogger::init(loggers).map_err(Error::LogInitialization)?;
 
-	Ok(())
+    Ok(())
 }
 
 struct AppState{
