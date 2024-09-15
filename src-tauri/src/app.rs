@@ -62,7 +62,7 @@ impl App {
         let vfs_manager = vfs::Manager::new(db.clone());
         let settings_manager = settings::Manager::new(db.clone());
         let auth_secret = settings_manager.get_auth_secret()?;
-        let ddns_manager = ddns::Manager::new(db.clone());
+        let ddns_manager = ddns::Manager::new(r"C:\Projects\rust-crates\music-app\polaris-tauri\tauri-vue\src-tauri\test.db");
         let user_manager = user::Manager::new(db.clone(), auth_secret);
         let index = index::Index::new(db.clone(), vfs_manager.clone(), settings_manager.clone());
         let config_manager = config::Manager::new(

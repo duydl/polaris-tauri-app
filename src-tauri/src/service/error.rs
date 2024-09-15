@@ -75,6 +75,8 @@ pub enum APIError {
     UserNotFound,
     #[error("Path not found in virtual filesystem")]
     VFSPathNotFound,
+	#[error("Rusqlite Migrate Error")]
+    RusqliteError,
 }
 
 impl From<config::Error> for APIError {
@@ -159,8 +161,8 @@ impl From<vfs::Error> for APIError {
 impl From<ddns::Error> for APIError {
     fn from(error: ddns::Error) -> APIError {
         match error {
-            ddns::Error::Database(e) => APIError::Database(e),
-            ddns::Error::DatabaseConnection(e) => e.into(),
+            ddns::Error::DatabaseError => APIError::RusqliteError,
+            ddns::Error::ConnectionError(e) => APIError::RusqliteError,
             ddns::Error::UpdateQueryFailed(s) => APIError::DdnsUpdateQueryFailed(s),
             ddns::Error::UpdateQueryTransport => APIError::DdnsUpdateQueryFailed(0),
         }
@@ -173,7 +175,7 @@ impl From<db::Error> for APIError {
             db::Error::ConnectionPoolBuild => APIError::Internal,
             db::Error::ConnectionPool => APIError::Internal,
             db::Error::Io(p, e) => APIError::Io(p, e),
-            db::Error::Migration => APIError::Internal,
+            // db::Error::Migration => APIError::Internal,
         }
     }
 }

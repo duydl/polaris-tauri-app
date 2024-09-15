@@ -11,6 +11,7 @@ edition = "2021"
 tauri-build = { version = "1", features = [] }
 
 [dependencies]
+rusqlite = "^0.28"
 tauri = { version = "1", features = ["shell-open", "devtools"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -29,7 +30,7 @@ getopts = "0.2.21"
 http = "0.2.8"
 id3 = "1.7.0"
 lewton = "0.10.2"
-libsqlite3-sys = { version = "0.26", features = [
+libsqlite3-sys = { version = "0.25", features = [
     "bundled",
     "bundled-windows",
 ], optional = true }

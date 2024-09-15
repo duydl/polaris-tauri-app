@@ -74,6 +74,8 @@ pub fn make_config() -> impl FnOnce(&mut ServiceConfig) + Clone {
 impl ResponseError for APIError {
     fn status_code(&self) -> StatusCode {
         match self {
+            APIError::RusqliteError => StatusCode::INTERNAL_SERVER_ERROR, // TODO
+
             APIError::AuthorizationTokenEncoding => StatusCode::INTERNAL_SERVER_ERROR,
             APIError::AdminPermissionRequired => StatusCode::UNAUTHORIZED,
             APIError::AudioFileIOError => StatusCode::NOT_FOUND,

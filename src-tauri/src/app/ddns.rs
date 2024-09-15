@@ -1,11 +1,9 @@
 use base64::prelude::*;
-use diesel::prelude::*;
 use log::{debug, error};
+use rusqlite::{params, Connection, Result as SqlResult};
 use serde::{Deserialize, Serialize};
 use std::thread;
 use std::time;
-
-use crate::db::{self, ddns_config, DB};
 
 const DDNS_UPDATE_URL: &str = "https://ydns.io/api/v1/update/";
 
@@ -15,14 +13,13 @@ pub enum Error {
     UpdateQueryFailed(u16),
     #[error("DDNS update query failed due to a transport error")]
     UpdateQueryTransport,
-    #[error(transparent)]
-    DatabaseConnection(#[from] db::Error),
-    #[error(transparent)]
-    Database(#[from] diesel::result::Error),
+    #[error("Database error")]
+    DatabaseError,
+    #[error("Could not acquire database connection")]
+    ConnectionError(#[from] rusqlite::Error),
 }
 
-#[derive(Clone, Debug, Deserialize, Insertable, PartialEq, Eq, Queryable, Serialize)]
-#[diesel(table_name = ddns_config)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Config {
     pub host: String,
     pub username: String,
@@ -31,12 +28,16 @@ pub struct Config {
 
 #[derive(Clone)]
 pub struct Manager {
-    db: DB,
+    db_path: String, // Path to the SQLite database
 }
 
 impl Manager {
-    pub fn new(db: DB) -> Self {
-        Self { db }
+    pub fn new(db_path: &str) -> Self {
+        Self { db_path: db_path.to_string() }
+    }
+
+    fn connect(&self) -> SqlResult<Connection> {
+        Connection::open(&self.db_path)
     }
 
     fn update_my_ip(&self) -> Result<(), Error> {
@@ -62,24 +63,32 @@ impl Manager {
         }
     }
 
+    // Fetch the DDNS config from the SQLite database
     pub fn config(&self) -> Result<Config, Error> {
-        use crate::db::ddns_config::dsl::*;
-        let mut connection = self.db.connect()?;
-        Ok(ddns_config
-            .select((host, username, password))
-            .get_result(&mut connection)?)
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare("SELECT host, username, password FROM ddns_config LIMIT 1")?;
+        let mut config_iter = stmt.query_map([], |row| {
+            Ok(Config {
+                host: row.get(0)?,
+                username: row.get(1)?,
+                password: row.get(2)?,
+            })
+        })?;
+
+        if let Some(config) = config_iter.next() {
+            return config.map_err(|_| Error::DatabaseError);
+        }
+
+        Err(Error::DatabaseError)
     }
 
+    // Update the DDNS config in the SQLite database
     pub fn set_config(&self, new_config: &Config) -> Result<(), Error> {
-        use crate::db::ddns_config::dsl::*;
-        let mut connection = self.db.connect()?;
-        diesel::update(ddns_config)
-            .set((
-                host.eq(&new_config.host),
-                username.eq(&new_config.username),
-                password.eq(&new_config.password),
-            ))
-            .execute(&mut connection)?;
+        let conn = self.connect()?;
+        conn.execute(
+            "UPDATE ddns_config SET host = ?, username = ?, password = ?",
+            params![new_config.host, new_config.username, new_config.password],
+        )?;
         Ok(())
     }
 
